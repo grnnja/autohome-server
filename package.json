@@ -1,0 +1,22 @@
+{
+  "name": "autohome-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.0",
+    "mosca": "^2.8.3",
+    "pigpio": "^1.2.2",
+    "sqlite3": "^4.0.8",
+    "ws": "^6.2.1"
+  },
+  "devDependencies": {
+    "pigpio-mock": "0.0.1"
+  }
+}
