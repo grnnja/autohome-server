@@ -1,8 +1,13 @@
-const sqlite3 = require('sqlite3').verbose()
+const sqlite3 = require('sqlite3')
 
 module.exports = class Database {
   constructor() {
     this.database = new sqlite3.Database('F:\\autohome database\\autohome.db')
+    this.eventInfo = {
+      FAN_TEMPERATURE: 1,
+      HEATER_GOAL_TEMPERATURE: 2,
+      HEATER_FAN_STATUS: 3,
+    }
 
     // create event_info table
     this.database.run(
@@ -67,5 +72,27 @@ module.exports = class Database {
       SELECT topic FROM event_info
       WHERE topic IS NOT NULL
     `, callback)
+  }
+
+  async getCurrentGoalTemperature(callback) {
+    this.database.get(
+      `SELECT data FROM event_data
+      WHERE event_id IS ${this.eventInfo.HEATER_GOAL_TEMPERATURE}
+      ORDER BY time DESC`,
+      callback,
+    )
+  }
+
+  async getCurrentTemperature(callback) {
+    this.database.get(
+      `SELECT data FROM event_data
+      WHERE event_id IS ${this.eventInfo.FAN_TEMPERATURE}
+      ORDER BY time DESC`,
+      callback,
+    )
+  }
+
+  serialize(x) {
+    this.database.serialize(x)
   }
 }
