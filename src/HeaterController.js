@@ -5,7 +5,12 @@ const ON = 1
 
 module.exports = class HeaterController {
   constructor() {
+    // servo motor data line
     this.motor = new Gpio(10, { mode: Gpio.OUTPUT })
+    // power mosfet to turn on and off motor
+    // when testing turning the heater on and off, the motor would get like 90%
+    // of the way there then stop and make a loud sound, drain a lot of power (~7W) and
+    // crash the pi. So now after a second, we turn off the motor
     this.motorControl = new Gpio(2, { mode: Gpio.OUTPUT })
     this.goalTemperature = 0
     this.currentTemperature = 0
@@ -25,10 +30,11 @@ module.exports = class HeaterController {
 
   updateHeaterState() {
     const temperatureThreshold = 3;
+    const temperatureDifference = this.currentTemperature - this.goalTemperature
     if ((this.heaterState === OFF
-    && this.currentTemperature - this.goalTemperature >= temperatureThreshold)
+    && temperatureDifference >= temperatureThreshold)
     || (this.heaterState === ON
-    && this.goalTemperature - this.currentTemperature >= temperatureThreshold)) {
+    && temperatureDifference <= temperatureThreshold)) {
       this.setHeaterState(!this.heaterState)
       console.log('heater state changed', this.heaterState)
     }

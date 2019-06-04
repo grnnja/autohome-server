@@ -74,7 +74,7 @@ module.exports = class Database {
     `, callback)
   }
 
-  async getCurrentGoalTemperature(callback) {
+  getCurrentGoalTemperature(callback) {
     this.database.get(
       `SELECT data FROM event_data
       WHERE event_id IS ${this.eventInfo.HEATER_GOAL_TEMPERATURE}
@@ -83,7 +83,7 @@ module.exports = class Database {
     )
   }
 
-  async getCurrentTemperature(callback) {
+  getCurrentTemperature(callback) {
     this.database.get(
       `SELECT data FROM event_data
       WHERE event_id IS ${this.eventInfo.FAN_TEMPERATURE}
