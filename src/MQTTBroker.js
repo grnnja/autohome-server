@@ -1,13 +1,13 @@
-const mosca = require('mosca')
+const mosca = require('mosca');
 
 module.exports = class MQTTBroker {
   constructor() {
     // mosca mqtt server
     this.settings = {
       port: 1883,
-    }
+    };
 
-    this.broker = new mosca.Server(this.settings)
+    this.broker = new mosca.Server(this.settings);
 
     this.broker.on('clientConnected', (client) => {
       console.log('client connected ', client.id);
@@ -24,8 +24,8 @@ module.exports = class MQTTBroker {
       payload: `${state}`,
       qos: 2,
       retain: false,
-    }
-    this.broker.publish(message)
+    };
+    this.broker.publish(message);
   }
 
   publishGoalTemperature(temperature) {
@@ -34,11 +34,11 @@ module.exports = class MQTTBroker {
       payload: `${temperature}`,
       qos: 2,
       retain: false,
-    }
-    this.broker.publish(message)
+    };
+    this.broker.publish(message);
   }
 
   on(message, callback) {
-    this.broker.on(message, callback)
+    this.broker.on(message, callback);
   }
-}
+};

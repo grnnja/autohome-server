@@ -1,13 +1,14 @@
-const sqlite3 = require('sqlite3')
+const sqlite3 = require('sqlite3');
+
+const eventInfo = {
+  fanTemperature: 1,
+  heaterGoalTemperature: 2,
+  heaterFanStatus: 3,
+};
 
 module.exports = class Database {
   constructor() {
-    this.database = new sqlite3.Database('F:\\autohome database\\autohome.db')
-    this.eventInfo = {
-      FAN_TEMPERATURE: 1,
-      HEATER_GOAL_TEMPERATURE: 2,
-      HEATER_FAN_STATUS: 3,
-    }
+    this.database = new sqlite3.Database(process.env.DATABASE_PATH);
 
     // create event_info table
     this.database.run(
@@ -19,7 +20,7 @@ module.exports = class Database {
         topic         TEXT,
         UNIQUE(name)
       );`,
-    )
+    );
     // create event_data table
     this.database.run(
       `CREATE TABLE IF NOT EXISTS event_data(
@@ -29,27 +30,31 @@ module.exports = class Database {
         time      DATETIME,
         FOREIGN KEY(event_id) REFERENCES sensor_info(event_id)
       );`,
-    )
+    );
     // will get topics from database then when we recieve mqtt messages we will check against topics
     // in database to see if we should send data to database
     this.getTopics((err, eventTopics) => {
       if (err) {
-        console.log(err)
+        console.log(err);
       }
-      this.topics = eventTopics.map(x => x.topic)
-    })
+      this.topics = eventTopics.map(x => x.topic);
+    });
   }
 
   // adds event info
   addEventInfo(name, topic, description, units, callback) {
     this.database.run(
       `INSERT OR IGNORE INTO event_info (units, description, name)
-      VALUES ('${units}', '${description}', '${name}')
+      VALUES ('$units', '$description', '$name')
       ON CONFLICT(name) DO UPDATE
-      SET units='${units}', description='${description}', topic='${topic}'
-      WHERE name='${name}';`,
+      SET units='$units', description='$description', topic='$topic'
+      WHERE name='$name';`, {
+        $units: units,
+        $description: description,
+        $topic: topic,
+      },
       callback,
-    )
+    );
   }
 
   // logs event data
@@ -60,39 +65,46 @@ module.exports = class Database {
       VALUES (
         (SELECT event_id
           FROM event_info
-          WHERE event_info.topic IS '${topic}'),
-        ${data},
-        datetime('now', 'localtime'))`,
+          WHERE event_info.topic IS $topic),
+        $data,
+        datetime('now', 'localtime'))`, {
+        $topic: topic,
+        $data: data,
+      },
       callback,
-    )
+    );
   }
 
   getTopics(callback) {
     this.database.all(`
       SELECT topic FROM event_info
       WHERE topic IS NOT NULL
-    `, callback)
+    `, callback);
   }
 
   getCurrentGoalTemperature(callback) {
     this.database.get(
       `SELECT data FROM event_data
-      WHERE event_id IS ${this.eventInfo.HEATER_GOAL_TEMPERATURE}
-      ORDER BY time DESC`,
+      WHERE event_id IS $heaterGoalTemperature
+      ORDER BY time DESC`, {
+        $heaterGoalTemperature: eventInfo.heaterGoalTemperature,
+      },
       callback,
-    )
+    );
   }
 
   getCurrentTemperature(callback) {
     this.database.get(
       `SELECT data FROM event_data
-      WHERE event_id IS ${this.eventInfo.FAN_TEMPERATURE}
-      ORDER BY time DESC`,
+      WHERE event_id IS $fanTemperature
+      ORDER BY time DESC`, {
+        $fanTemperature: eventInfo.fanTemperature,
+      },
       callback,
-    )
+    );
   }
 
   serialize(x) {
-    this.database.serialize(x)
+    this.database.serialize(x);
   }
-}
+};
