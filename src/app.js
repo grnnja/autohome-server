@@ -32,7 +32,6 @@ database.getCurrentTemperature((err, row) => {
   }
   heaterController.updateCurrentTemperature(row.data);
 });
-
 // // add events to database. should remove later
 // database.serialize(() => {
 //   // may need to comment this stuff out if adding tables because readding tables takes a while
@@ -44,7 +43,8 @@ database.getCurrentTemperature((err, row) => {
 
 // fired when a message is received
 mqttBroker.on('published', (packet, client) => {
-  console.log('published ', packet.topic, '\n', packet.payload);
+  const date = new Date();
+  console.log('published', packet.topic, '\n', packet.payload, 'number: ', Number(packet.payload), 'at', date.toLocaleTimeString());
 
   // log data to database if topic is in database
   // way cleaner than switch for each topic
@@ -74,6 +74,29 @@ app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
 console.log('express port:\t', port);
+
+app.get('/fan/temperature', (req, res) => {
+  if (!/^[0-9]*$/.test(req.query.start)) {
+    res.status(400).send({
+      message: 'start value is not a number',
+    });
+    return;
+  }
+  if (!/^[0-9]*$/.test(req.query.end)) {
+    res.status(400).send({
+      message: 'end value is not a number',
+    });
+    return;
+  }
+  // res.send('fan temperatrure request recieved');
+  database.getGraphData(1, req.query.start, req.query.end, (err, data) => {
+    if (err) {
+      res.status(500).send(`sql error: ${err}`);
+      return;
+    }
+    res.status(200).send(data);
+  });
+});
 
 // app.post('/heater/goalTemperature', (req, res) => {
 //   if (Number.isNaN(Number(req.body.goalTemperature)) !== true) {

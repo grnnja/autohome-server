@@ -4,9 +4,8 @@ module.exports = class MQTTBroker {
   constructor() {
     // mosca mqtt server
     this.settings = {
-      port: 1883,
+      port: Number(process.env.MQTT_BROKER_PORT),
     };
-
     this.broker = new mosca.Server(this.settings);
 
     this.broker.on('clientConnected', (client) => {
