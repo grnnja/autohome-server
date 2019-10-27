@@ -1,6 +1,13 @@
+/**
+ * @overview mosca MQTTBroker
+ */
+
 const mosca = require('mosca');
 
-module.exports = class MQTTBroker {
+/**
+ * Wraps mosca MQTTBroker has functions to publish information
+ */
+class MQTTBroker {
   constructor() {
     // mosca mqtt server
     this.settings = {
@@ -17,6 +24,9 @@ module.exports = class MQTTBroker {
     }));
   }
 
+  /**
+   * @param {1 or 0} state takes 1 or 0 and sends MQTT message
+   */
   publishFanState(state) {
     const message = {
       topic: 'heater/fan/control',
@@ -37,7 +47,15 @@ module.exports = class MQTTBroker {
     this.broker.publish(message);
   }
 
+  /**
+  * exposes on method from MQTT broker
+  * fires callback when message parameter matches input message
+  * @param {string} message message to match
+  * @param {function} callback what is fired when message matches
+  */
   on(message, callback) {
     this.broker.on(message, callback);
   }
-};
+}
+
+module.exports = MQTTBroker;

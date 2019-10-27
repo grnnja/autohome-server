@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const WebSocket = require('ws');
 require('dotenv').config();
 
@@ -55,7 +56,7 @@ mqttBroker.on('published', (packet, client) => {
       case 'heater/fan/temperature':
         heaterController.updateCurrentTemperature(Number(packet.payload));
         break;
-      case 'heater/fan/goalTemperature':
+      case 'heater/goalTemperature':
         heaterController.updateGoalTemperature(Number(packet.payload));
         break;
       default:
@@ -72,6 +73,7 @@ const port = process.env.EXPRESS_PORT;
 
 app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+app.use(cors());
 
 console.log('express port:\t', port);
 
@@ -94,20 +96,47 @@ app.get('/fan/temperature', (req, res) => {
       res.status(500).send(`sql error: ${err}`);
       return;
     }
-    res.status(200).send(data);
+    res.status(200).send(data.map((datum) => [datum.time, datum.data]));
   });
 });
 
-// app.post('/heater/goalTemperature', (req, res) => {
-//   if (Number.isNaN(Number(req.body.goalTemperature)) !== true) {
-//     mqttBroker.publishGoalTemperature(req.body.goalTemperature)
-//     console.log('heater goal temperature changed', req.body.goalTemperature)
-//     res.send(`temperature changed: ${req.body.goalTemperature}`);
-//   } else {
-//     res.send('invalid request: goalTemperature in request is not a number')
-//     console.log('invalid goalTemperature request: ', req.body)
-//   }
-// })
+// sets goal temeprature from post request
+app.post('/heater/goalTemperature', (req, res) => {
+  if (Number.isNaN(Number(req.body.goalTemperature)) !== true) {
+    mqttBroker.publishGoalTemperature(req.body.goalTemperature);
+    console.log('heater goal temperature changed', req.body.goalTemperature);
+    res.status(202);
+    res.send(`temperature changed to: ${req.body.goalTemperature}`);
+  } else if (req.body.goalTemperature === undefined) {
+    res.status(400);
+    res.send('invalid request: goalTemperature is undefined')
+  } else {
+    res.status(400);
+    res.send('invalid request: goalTemperature in request is not a number');
+    console.log('invalid goalTemperature request: ', req.body);
+  }
+});
+
+app.post('/heater/fan/control', (req, res) => {
+  switch (req.body.status) {
+    case 1:
+      mqttBroker.publishFanState(1);
+      res.status(202);
+      break;
+    case 0:
+      mqttBroker.publishFanState(0);
+      res.status(202);
+      break;
+    case undefined:
+      res.status(400);
+      res.send('invalid request: status is not defined');
+      break;
+    default:
+      res.status(400);
+      res.send('invalid request: status is not 1 or 0');
+      break;
+  }
+});
 
 // app.post('/heater/fan/status', (req, res) => {
 //   mqttBroker.publishFanState(req.body.status)

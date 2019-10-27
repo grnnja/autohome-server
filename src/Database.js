@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Database object that interfaces with the sqlite3 database
+ */
 const sqlite3 = require('sqlite3');
 const schedule = require('node-schedule');
 
@@ -17,7 +20,11 @@ const eventInfo = {
   },
 };
 
-module.exports = class Database {
+/**
+ * Creates database object that sets up database
+ * has access to sqlite3's database methods
+ */
+class Database {
   constructor() {
     this.database = new sqlite3.Database(process.env.DATABASE_PATH);
 
@@ -84,13 +91,15 @@ module.exports = class Database {
 
     //   `);
 
-    // will get topics from database then when we recieve mqtt messages we will check against topics
-    // in database to see if we should send data to database
+    /**
+     * will get topics from database then when we recieve mqtt messages we will check against topics
+     * in database to see if we should send data to database
+     */
     this.getTopics((err, eventTopics) => {
       if (err) {
         console.log(err);
       } else {
-        this.topics = eventTopics.map(x => x.topic);
+        this.topics = eventTopics.map((x) => x.topic);
       }
     });
 
@@ -138,7 +147,12 @@ module.exports = class Database {
     );
   }
 
-  // logs event data
+  /**
+   * Logs event data
+   * @param {string} topic mqtt topic
+   * @param {number} data number to log
+   * @param {function} callback callback run after data has been entered
+   */
   logEventData(topic, data, callback) {
     this.database.run(
       `INSERT INTO event_data
@@ -156,6 +170,10 @@ module.exports = class Database {
     );
   }
 
+  /**
+   * gets list of topics and returns them in callback
+   * @param {function} callback in callback topics are sent
+   */
   getTopics(callback) {
     this.database.all(`
       SELECT topic FROM event_info
@@ -163,6 +181,17 @@ module.exports = class Database {
     `, callback);
   }
 
+  /**
+   * Callback from sqlite3 get call
+   * @callback sqlite3GetCallback
+   * @param {Error} error error object is there is an error in request
+   * @param {Object} row values for first row
+   */
+
+  /**
+   * gets the last goal temperature sent to the database and returns information in a callback
+   * @param {sqlite3GetCallabck} sqlite3 get callback
+   */
   getCurrentGoalTemperature(callback) {
     this.database.get(
       `SELECT data FROM event_data
@@ -215,7 +244,7 @@ module.exports = class Database {
     // so this doesnt sanatize the input but I'm hoping it is safe because
     // I don't know what else to do
     this.database.all(`
-      SELECT time, data FROM ${tableName}
+      SELECT CAST(STRFTIME('%s', time) AS INTEGER) * 1000 AS time, data FROM ${tableName}
       WHERE event_id IS $eventID
       AND time IS NOT NULL AND time BETWEEN datetime($start, 'unixepoch', 'localtime') AND datetime($end, 'unixepoch', 'localtime')
       ORDER BY time ASC
@@ -248,7 +277,7 @@ module.exports = class Database {
         break;
       case 'month':
         datetimeFormat = '%Y-%m';
-        addedString = '-00 00:00:00';
+        addedString = '-01 00:00:00';
         break;
       default:
         console.log('error: unknown aggregateEventData timeScale');
@@ -290,3 +319,5 @@ module.exports = class Database {
     this.database.serialize(x);
   }
 };
+
+module.exports = Database;
